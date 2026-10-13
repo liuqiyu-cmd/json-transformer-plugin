@@ -186,7 +186,7 @@ MySQL 网格对齐、MediaWiki 表头、Markdown `\|` 转义、多组端到端�
 1. **License 字段必填**：上传表单中 License 选择 **Apache 2.0**，
    License URL 填 <https://www.apache.org/licenses/LICENSE-2.0.txt>。
 2. **开源许可证必须提供源码链接**：Source Code URL 填本插件的代码仓库地址
-   （如 `https://github.com/yourname/json-transformer-plugin`）。
+   （`https://github.com/liuqiyu-cmd/json-transformer-plugin`）。
    这是开源分发的法律要求，缺失会被 Marketplace 下架。
 3. 把 `LICENSE` 文件与代码一起提交到开源仓库（本项目已包含）。
 4. 发布前把 `build.gradle.kts` 中 `vendor { … }` 与 `plugin.xml` 的

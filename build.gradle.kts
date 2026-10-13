@@ -32,9 +32,9 @@ intellijPlatform {
         // Vendor info patched into plugin.xml; change to your real identity
         // before publishing to JetBrains Marketplace.
         vendor {
-            name = "Your Name"
-            email = "you@example.com"
-            url = "https://github.com/yourname/json-transformer-plugin"
+            name = "liuqiyu-cmd"
+            email = "liuqiyu@dbhl.cn"
+            url = "https://github.com/liuqiyu-cmd/json-transformer-plugin"
         }
         ideaVersion {
             // Compatible with IDEA 2024.1 (build 241) through 2024.3 (build 243.*).
