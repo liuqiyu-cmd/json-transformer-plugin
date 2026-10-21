@@ -148,7 +148,10 @@ class JsonOutputPanel(private val onDownload: () -> Unit) : JPanel(BorderLayout(
         }
     }
 
-    /** Materialize children [from, from+PAGE_SIZE) of a container node. */
+    /** Materialize children [from, from+PAGE_SIZE) of a container node.
+     *  Uses incremental insertNodeInto/removeNodeFromParent events on purpose:
+     *  nodeStructureChanged would reset the node's own expanded state (wiping
+     *  the expansion that just triggered this load). */
     private fun loadPage(node: DefaultMutableTreeNode, from: Int) {
         val d = node.userObject as NodeData
         when (val v = d.value) {
@@ -156,9 +159,15 @@ class JsonOutputPanel(private val onDownload: () -> Unit) : JPanel(BorderLayout(
                 val size = v.elements.size
                 val end = minOf(from + PAGE_SIZE, size)
                 for (i in from until end) {
-                    node.add(DefaultMutableTreeNode(NodeData(index = i, value = v.elements[i], comma = i < size - 1)))
+                    treeModel.insertNodeInto(
+                        DefaultMutableTreeNode(NodeData(index = i, value = v.elements[i], comma = i < size - 1)),
+                        node, node.childCount
+                    )
                 }
-                if (end < size) node.add(DefaultMutableTreeNode(NodeData(isPage = true, pageFrom = end, pageTotal = size)))
+                if (end < size) treeModel.insertNodeInto(
+                    DefaultMutableTreeNode(NodeData(isPage = true, pageFrom = end, pageTotal = size)),
+                    node, node.childCount
+                )
             }
             is JsonValue.Obj -> {
                 val keys = v.members.keys.toList()
@@ -166,14 +175,19 @@ class JsonOutputPanel(private val onDownload: () -> Unit) : JPanel(BorderLayout(
                 val end = minOf(from + PAGE_SIZE, size)
                 for (i in from until end) {
                     val k = keys[i]
-                    node.add(DefaultMutableTreeNode(NodeData(key = k, value = v.members[k], comma = i < size - 1)))
+                    treeModel.insertNodeInto(
+                        DefaultMutableTreeNode(NodeData(key = k, value = v.members[k], comma = i < size - 1)),
+                        node, node.childCount
+                    )
                 }
-                if (end < size) node.add(DefaultMutableTreeNode(NodeData(isPage = true, pageFrom = end, pageTotal = size)))
+                if (end < size) treeModel.insertNodeInto(
+                    DefaultMutableTreeNode(NodeData(isPage = true, pageFrom = end, pageTotal = size)),
+                    node, node.childCount
+                )
             }
             else -> return
         }
         d.loaded = true
-        treeModel.nodeStructureChanged(node)
     }
 
     /** Page pseudo-nodes are vetoed here (they must not expand themselves);
@@ -197,7 +211,7 @@ class JsonOutputPanel(private val onDownload: () -> Unit) : JPanel(BorderLayout(
         fun consumePage(node: DefaultMutableTreeNode) {
             val d = node.userObject as NodeData
             val parent = node.parent as? DefaultMutableTreeNode ?: return
-            parent.remove(node)
+            treeModel.removeNodeFromParent(node)
             loadPage(parent, d.pageFrom)
             SwingUtilities.invokeLater { tree.expandPath(TreePath(parent.path)) }
         }
@@ -226,7 +240,7 @@ class JsonOutputPanel(private val onDownload: () -> Unit) : JPanel(BorderLayout(
             when {
                 d.isPage -> {                       // drain every page so all children appear
                     val parent = n.parent as? DefaultMutableTreeNode ?: continue
-                    parent.remove(n)
+                    treeModel.removeNodeFromParent(n)
                     loadPage(parent, d.pageFrom)
                     stack.addLast(parent)
                 }
