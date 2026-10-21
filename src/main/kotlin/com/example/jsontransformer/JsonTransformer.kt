@@ -1,8 +1,7 @@
 package com.example.jsontransformer
 
 /**
- * Core engine that mirrors the functionality of the tableconvert.com
- * "JSON to JSON" tool: it reads a JSON document in any of the supported
+ * Core JSON-to-table engine: it reads a JSON document in any of the supported
  * table layouts, normalises it into a column-oriented [Table], lets you
  * transform that table (transpose, de-duplicate, case conversion, find &
  * replace, sort, ...), and renders the table back out in any of the supported

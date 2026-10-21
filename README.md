@@ -1,15 +1,15 @@
 # JSON Transformer — IntelliJ IDEA 插件
 
-把 [tableconvert.com](https://tableconvert.com/zh-cn/json-to-json) 的表格工具搬进 IDE，
-完整覆盖其三大块：**数据源 → 在线表格编辑器 → 表格生成器**，无需打开浏览器。
+在 IDE 内完成 JSON 与多种表格格式的互相转换：**数据源 → 表格编辑器 → 表格生成器**
+三大模块一体，无需打开浏览器或任何外部工具。
 
-> 开发方式参考 [JetBrains Marketplace](https://plugins.jetbrains.com/) 与官方
-> [IntelliJ Platform Plugin SDK](https://plugins.jetbrains.com/docs/intellij/getting-started.html)，
+> 按 [JetBrains Marketplace](https://plugins.jetbrains.com/) 官方
+> [IntelliJ Platform Plugin SDK](https://plugins.jetbrains.com/docs/intellij/getting-started.html) 规范开发，
 > 使用官方推荐的 **Gradle + IntelliJ Platform Gradle Plugin (2.x) + Kotlin** 方案。
 
 ---
 
-## 功能（对应 tableconvert 三大块）
+## 功能（三大模块）
 
 ### ① 数据源（输入格式，支持自动识别）
 
@@ -28,14 +28,14 @@
 | MediaWiki 表格 | `{\| class="wikitable" ... \|}` |
 | **上传文件** | 工具栏「上传文件」按钮，支持 `.xlsx` / `.csv` / `.tsv` / `.json` / `.md` / `.html` / `.xml` / `.sql` 等；`.xlsx` 用零依赖读取器解析（sharedStrings、类型化数字/布尔、实体转义、AA+ 列名，已用 openpyxl 生成的文件实测） |
 
-### ② 在线表格编辑器
+### ② 表格编辑器
 
 网格直接编辑单元格，另提供：转置 / 去重 / 删除空行 / **删除选中行 / 删除选中列** /
 **在上方/下方插入行 / 在左侧/右侧插入列** /
 转大写 / 转小写 / 首字母大写 / 查找替换（纯文本或正则）/ 按选中列排序 ↑↓ /
 撤销重做 / 重置表格。
 
-- **右键菜单**（与 tableconvert 一致）：复制 / 剪切 / 粘贴（TSV，粘贴时自动扩表）、
+- **右键菜单**：复制 / 剪切 / 粘贴（TSV，粘贴时自动扩表）、
   删除选中行、在上方/下方插入行、删除选中列、在左侧/右侧插入列、升序（A to Z）/ 降序（Z to A）排序。
 - **底部统计条**：随选中列实时显示 `COUNT / SUM / MIN / MAX / AVG`；未选中列时汇总整表。
 - 表格支持**整行选择 + 整列选择**（点行头/列头可多选），删除行列同样受撤销/重做保护。
@@ -59,8 +59,17 @@
 | ASCII | MySQL 风格对齐网格 |
 | MediaWiki | `{| class="wikitable" … \|}` |
 
-> \* Magic 与 PDF 在 tableconvert 上分别是交互编辑器和二进制 PDF；
-> 在插件的文本输出区里以可打印的文本表格呈现（可打印/再粘贴利用）。
+> \* Magic 与 PDF 在插件的文本输出区里以可打印的文本表格（ASCII 网格）呈现，可打印或再粘贴利用。
+
+### JSON 输出视图：树视图 / 代码视图
+
+「JSON 转换」页的输出区顶部带工具栏，可一键切换：
+
+- **树视图**：IDE 风格的可折叠 JSON 树——容器节点显示计数徽章（如 `[ 189 ]`、`{ 5 }`），
+  数组元素以蓝色对齐序号（`0:` `1:` …）展示，行尾逗号弱化显示；
+  **大数组分页懒加载**（每页 50 项，「…还有 N 项」展开续读），超大 JSON 也能秒开；
+  另有 **全展开 / 全折叠** 按钮。
+- **代码视图**：经典文本输出，是「复制到剪贴板 / 下载文件」导出的唯一数据源。
 
 ### JSON→JSON 专用选项
 
@@ -82,6 +91,9 @@ json-transformer-plugin/
 │   ├── JsonTransformer.kt           # 核心：JSON 表格解析/转换/渲染引擎
 │   ├── TableIO.kt                   # 多格式数据源解析 + 表格生成器
 │   ├── JsonTransformerPanel.kt      # 主 UI（JSON 转换 + 表格编辑器 + 表格生成器）
+│   ├── JsonOutputPanel.kt           # 输出模块：树视图/代码视图双视图 + 分页懒加载 JSON 树
+│   ├── XlsxWriter.kt                # 零依赖 .xlsx 写入器
+│   ├── XlsxReader.kt                # 零依赖 .xlsx 读取器
 │   ├── JsonTransformerToolWindowFactory.kt
 │   ├── JsonTransformerProjectService.kt
 │   ├── OpenJsonTransformerAction.kt

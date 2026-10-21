@@ -5,13 +5,15 @@
     <version>1.0.0</version>
 
     <description><![CDATA[
-        <p>Convert JSON between multiple table layouts inside your IDE — a native
-        re-implementation of the tableconvert.com "JSON to JSON" tool. / 在 IDE 内部将
-        JSON 在多种表格布局之间转换，复刻 tableconvert.com 的 "JSON to JSON" 工具。</p>
+        <p>Convert JSON between multiple table layouts inside your IDE — parse tables
+        from JSON / CSV / Excel / SQL / HTML / Markdown and export back to a dozen
+        formats, all without leaving the editor. / 在 IDE 内部完成 JSON 与多种表格布局的
+        互相转换，无需打开浏览器或外部工具。</p>
         <ul>
             <li>四种布局互转：对象数组 / 二维数组 / 列数组 / 键值数组 (4 table layouts with auto-detection)</li>
             <li>输入格式自动识别 (auto-detect input format)</li>
             <li>可设置缩进（2 / 4 / 8 空格、Tab）、压缩输出、根对象名 (indent / minify / root name)</li>
+            <li>输出区支持树视图 / 代码视图切换，大树分页懒加载、全展开 / 全折叠 (lazy JSON tree view)</li>
             <li>支持"智能解析单元格中的 JSON 字符串" (smart cell parsing)</li>
             <li>表格编辑器与表格生成器：CSV / SQL / Excel (.xlsx) / HTML / Markdown 等十余种格式 (table editor & generator)</li>
             <li>编辑器右键 "Convert JSON Selection" 一键转换选中内容 (convert editor selection)</li>

@@ -21,12 +21,13 @@ import javax.swing.table.AbstractTableModel
 import javax.swing.DefaultListCellRenderer
 
 /**
- * The main UI for the plugin. It mirrors the three blocks of tableconvert's
- * table tools (数据源 → 在线表格编辑器 → 表格生成器) with three tabs:
+ * The main UI for the plugin. Three tabs cover a complete table workflow
+ * (数据源 → 表格编辑器 → 表格生成器):
  *
  *  1. "JSON 转换"   – paste a 数据源 (JSON / Excel-TSV / CSV / Markdown / HTML /
  *                     SQL / LaTeX / XML / MySQL / MediaWiki), pick the JSON
- *                     output layout and options; auto-updates live.
+ *                     output layout and options; auto-updates live. The output
+ *                     module offers a lazy tree view plus the classic code view.
  *  2. "表格编辑器"   – a spreadsheet-like grid of the parsed table with editing
  *                     operations (转置 / 去重 / 删除空行 / 大小写 / 查找替换 /
  *                     排序 / 撤销重做).
@@ -82,7 +83,7 @@ class JsonTransformerPanel(private val project: Project) : JPanel(BorderLayout()
         SourceEntry("MediaWiki 表格", SourceFormat.MEDIAWIKI, JsonTableFormat.AUTO)
     )
 
-    /** 表格生成器 output formats, same order as the tableconvert tabs. */
+    /** 表格生成器 output formats. */
     private val generatorFormats = listOf(
         GeneratorFormat.JSON to "JSON",
         GeneratorFormat.EXCEL to "Excel",
@@ -303,7 +304,7 @@ class JsonTransformerPanel(private val project: Project) : JPanel(BorderLayout()
         return wrapper
     }
 
-    /** Right-click menu on the grid, mirroring tableconvert's editor menu. */
+    /** Right-click menu on the grid: clipboard + row/column operations + sort. */
     private fun buildGridPopupMenu(): JPopupMenu {
         val menu = JPopupMenu()
         fun item(text: String, action: () -> Unit) = menu.add(JMenuItem(text).apply { addActionListener { action() } })

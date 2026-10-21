@@ -1,7 +1,7 @@
 package com.example.jsontransformer
 
 /**
- * Multi-format table I/O, mirroring tableconvert.com's two outer blocks:
+ * Multi-format table I/O with two outer blocks:
  *
  *  - "数据源"  : import a table from Excel(TSV) / CSV / Markdown / HTML /
  *                SQL INSERT / LaTeX / XML / MySQL-CLI output / MediaWiki,
@@ -538,7 +538,7 @@ object TableIO {
         }
         val cols = t.columns.joinToString(", ") { "`${it.name}`" }
         val sb = StringBuilder()
-        // CREATE TABLE with inferred column types (matches tableconvert's SQL output)
+        // CREATE TABLE with inferred column types (INT/DOUBLE/BOOLEAN/VARCHAR/TEXT)
         sb.append("CREATE TABLE IF NOT EXISTS `").append(tableName).append("` (\n")
         sb.append(t.columns.joinToString(",\n") { col ->
             "  `" + col.name.replace("`", "``") + "` " + sqlType(col)
@@ -557,7 +557,7 @@ object TableIO {
         return sb.toString()
     }
 
-    /** Infer a SQL column type from the cell values (tableconvert-style). */
+    /** Infer a SQL column type from the cell values. */
     private fun sqlType(col: Column): String {
         val cells = col.cells.filter { it !is JsonValue.Null }
         if (cells.isEmpty()) return "VARCHAR(255)"
