@@ -71,6 +71,10 @@ class JsonOutputPanel(private val onDownload: () -> Unit) : JPanel(BorderLayout(
         toggleClickCount = 1
         cellRenderer = Renderer()
         addTreeWillExpandListener(LazyLoader())
+        addTreeExpansionListener(object : javax.swing.event.TreeExpansionListener {
+            override fun treeExpanded(event: javax.swing.event.TreeExpansionEvent) = onExpanded(event)
+            override fun treeCollapsed(event: javax.swing.event.TreeExpansionEvent) { }
+        })
     }
 
     private val treeToggle = JToggleButton("树视图", true)
@@ -138,8 +142,8 @@ class JsonOutputPanel(private val onDownload: () -> Unit) : JPanel(BorderLayout(
         treeModel.setRoot(root)
         treeModel.reload()
         SwingUtilities.invokeLater {
-            if (rootValue != null) tree.expandRow(0) else tree.collapseRow(0)
             tree.selectionModel.clearSelection()   // no stuck "selected root" look
+            if (rootValue != null) tree.expandRow(0) else tree.collapseRow(0)
             tree.scrollRowToVisible(0)
         }
     }
@@ -172,10 +176,11 @@ class JsonOutputPanel(private val onDownload: () -> Unit) : JPanel(BorderLayout(
         treeModel.nodeStructureChanged(node)
     }
 
-    /** Lazy loading: containers materialize their first page on first expansion;
-     *  page pseudo-nodes replace themselves with the next chunk then re-expand.
-     *  (A single listener must both veto the pseudo expansion AND schedule the
-     *  swap — once the veto is thrown no later listener sees the event.) */
+    /** Page pseudo-nodes are vetoed here (they must not expand themselves);
+     *  real containers load their children in [TreeExpansionListener.treeExpanded]
+     *  — mutating the model inside treeWillExpand leaves JTree's internal
+     *  expansion state inconsistent (the node looks collapsed, JTree thinks it
+     *  is expanded, and clicks appear dead until a direct expandPath fixes it). */
     private inner class LazyLoader : TreeWillExpandListener {
         override fun treeWillExpand(event: TreeExpansionEvent) {
             val node = event.path.lastPathComponent as? DefaultMutableTreeNode ?: return
@@ -183,9 +188,6 @@ class JsonOutputPanel(private val onDownload: () -> Unit) : JPanel(BorderLayout(
             if (d.isPage) {
                 SwingUtilities.invokeLater { consumePage(node) }
                 throw ExpandVetoException(event)
-            }
-            if (d.isContainer && !d.loaded) {
-                loadPage(node, 0)
             }
         }
 
@@ -198,6 +200,16 @@ class JsonOutputPanel(private val onDownload: () -> Unit) : JPanel(BorderLayout(
             parent.remove(node)
             loadPage(parent, d.pageFrom)
             SwingUtilities.invokeLater { tree.expandPath(TreePath(parent.path)) }
+        }
+    }
+
+    /** Materialize children AFTER the expansion completed — the safe point to
+     *  mutate the model. Runs on the EDT synchronously, so no flicker. */
+    private fun onExpanded(event: TreeExpansionEvent) {
+        val node = event.path.lastPathComponent as? DefaultMutableTreeNode ?: return
+        val d = node.userObject as? NodeData ?: return
+        if (d.isContainer && !d.loaded) {
+            loadPage(node, 0)
         }
     }
 
