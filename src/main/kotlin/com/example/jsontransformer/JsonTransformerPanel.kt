@@ -56,11 +56,8 @@ class JsonTransformerPanel(private val project: Project) : JPanel(BorderLayout()
         lineWrap = false
         font = JBTextArea().font.deriveFont(13f)
     }
-    private val outputArea = JBTextArea().apply {
-        lineWrap = false
-        isEditable = false
-        font = JBTextArea().font.deriveFont(13f)
-    }
+    /** Output module: code view + lazy JSON tree view (树视图/代码视图/全展开/全折叠). */
+    private val outputPanel = JsonOutputPanel(onDownload = { saveOutput() })
 
     /**
      * 数据源 entries. Each is either a JSON layout (handled by
@@ -257,7 +254,7 @@ class JsonTransformerPanel(private val project: Project) : JPanel(BorderLayout()
         val split = JSplitPane(
             JSplitPane.HORIZONTAL_SPLIT,
             JBScrollPane(inputArea).also { it.border = titledBorder("输入 JSON (Input)") },
-            JBScrollPane(outputArea).also { it.border = titledBorder("输出 JSON (Output)") }
+            outputPanel.also { it.border = titledBorder("输出 JSON (Output)") }
         ).apply {
             dividerLocation = 480
             resizeWeight = 0.5
@@ -437,7 +434,7 @@ class JsonTransformerPanel(private val project: Project) : JPanel(BorderLayout()
         if (input.isBlank()) {
             currentTable = null
             tableModel.table = null
-            outputArea.text = ""
+            outputPanel.setCode("")
             undoStack.clear(); redoStack.clear()
             updateUndoRedo()
             return
@@ -458,7 +455,7 @@ class JsonTransformerPanel(private val project: Project) : JPanel(BorderLayout()
             currentTable = null
             tableModel.table = null
             generatorArea.text = ""
-            outputArea.text = "转换出错 / Error:\n${e.message ?: e.javaClass.simpleName}"
+            outputPanel.setCode("转换出错 / Error:\n${e.message ?: e.javaClass.simpleName}")
             undoStack.clear(); redoStack.clear()
             updateUndoRedo()
         }
@@ -485,17 +482,19 @@ class JsonTransformerPanel(private val project: Project) : JPanel(BorderLayout()
     }
 
     private fun renderJsonOutput() {
-        val t = currentTable ?: run { outputArea.text = ""; return }
+        val t = currentTable ?: run { outputPanel.setCode(""); return }
         try {
-            outputArea.text = JsonTransformer.render(
-                t,
-                outputFormats[outputFormatCombo.selectedIndex].first,
-                indentStyles[indentCombo.selectedIndex].first,
-                rootNameField.text.takeIf { it.isNotBlank() },
-                minifyCheck.isSelected
+            outputPanel.setCode(
+                JsonTransformer.render(
+                    t,
+                    outputFormats[outputFormatCombo.selectedIndex].first,
+                    indentStyles[indentCombo.selectedIndex].first,
+                    rootNameField.text.takeIf { it.isNotBlank() },
+                    minifyCheck.isSelected
+                )
             )
         } catch (e: Exception) {
-            outputArea.text = "转换出错 / Error:\n${e.message ?: e.javaClass.simpleName}"
+            outputPanel.setCode("转换出错 / Error:\n${e.message ?: e.javaClass.simpleName}")
         }
     }
 
@@ -782,7 +781,7 @@ class JsonTransformerPanel(private val project: Project) : JPanel(BorderLayout()
                 else -> "txt"          // MAGIC / PDF / ASCII text grids
             }
         } else {
-            val text = outputArea.text
+            val text = outputPanel.codeText
             if (text.isEmpty() || text.startsWith("转换出错")) null else text to "json"
         }
     }
