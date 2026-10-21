@@ -66,6 +66,9 @@ class JsonOutputPanel(private val onDownload: () -> Unit) : JPanel(BorderLayout(
         setShowsRootHandles(true)
         rowHeight = 22
         font = Font(Font.MONOSPACED, Font.PLAIN, 13)
+        // Single click toggles expansion (default is 2 = double click), so a
+        // node opens on the first click like in the IDE JSON viewer.
+        toggleClickCount = 1
         cellRenderer = Renderer()
         addTreeWillExpandListener(LazyLoader())
     }
@@ -123,16 +126,21 @@ class JsonOutputPanel(private val onDownload: () -> Unit) : JPanel(BorderLayout(
 
     // ------------------------------------------------------------- tree building
 
+    /** Last text the tree was built from — identical output skips the rebuild
+     *  so the user's expansion state survives option toggles / re-renders. */
+    private var lastTreeText: String? = null
+
     private fun rebuildTree(text: String) {
+        if (text == lastTreeText) return
+        lastTreeText = text
         val rootValue = if (text.isBlank()) null else runCatching { Json.parse(text) }.getOrNull()
         val root = DefaultMutableTreeNode(NodeData(value = rootValue))
         treeModel.setRoot(root)
         treeModel.reload()
-        if (rootValue != null) {
-            SwingUtilities.invokeLater {
-                tree.expandRow(0)
-                tree.scrollRowToVisible(0)
-            }
+        SwingUtilities.invokeLater {
+            if (rootValue != null) tree.expandRow(0) else tree.collapseRow(0)
+            tree.selectionModel.clearSelection()   // no stuck "selected root" look
+            tree.scrollRowToVisible(0)
         }
     }
 
@@ -238,9 +246,40 @@ class JsonOutputPanel(private val onDownload: () -> Unit) : JPanel(BorderLayout(
         ): java.awt.Component {
             super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, focus)
             val d = (value as? DefaultMutableTreeNode)?.userObject as? NodeData
-            text = if (d == null) value.toString() else htmlFor(d)
+            // Selected rows render in the theme's selection foreground (uniform,
+            // no syntax colors) — colored text on the blue selection background
+            // is unreadable.
+            text = when {
+                d == null -> value.toString()
+                sel -> plainHtml(d)
+                else -> htmlFor(d)
+            }
             return this
         }
+    }
+
+    /** Selection-safe rendering: same content, uniform (light) color. */
+    private fun plainHtml(d: NodeData): String {
+        if (d.isPage) {
+            val remaining = d.pageTotal - d.pageFrom
+            return "<html>… 还有 $remaining 项（元素 ${d.pageFrom}-${d.pageTotal - 1}），展开加载</html>"
+        }
+        if (d.value == null) return "<html>（无法解析为 JSON / Not valid JSON）</html>"
+        val sb = StringBuilder("<html>")
+        d.index?.let { sb.append("$it: ") }
+        d.key?.let { sb.append("\"${esc(it)}\": ") }
+        sb.append(plainValue(d.value))
+        if (d.comma) sb.append(" ,")
+        return sb.append("</html>").toString()
+    }
+
+    private fun plainValue(v: JsonValue): String = when (v) {
+        is JsonValue.Obj  -> "{ ${v.members.size} }"
+        is JsonValue.Arr  -> "[ ${v.elements.size} ]"
+        is JsonValue.Str  -> "\"${esc(truncate(v.value))}\""
+        is JsonValue.Num  -> v.raw
+        is JsonValue.Bool -> v.value.toString()
+        JsonValue.Null    -> "null"
     }
 
     private fun htmlFor(d: NodeData): String {
@@ -281,14 +320,14 @@ class JsonOutputPanel(private val onDownload: () -> Unit) : JPanel(BorderLayout(
 
     // Theme-aware palette (light / dark), mirroring the IDE JSON viewer colors.
     private val indexColor = JBColor(Color(0x174AD4), Color(0x6F9EFF))
-    private val keyColor   = JBColor(Color(0x834C00), Color(0xFFC66D))
+    private val keyColor   = JBColor(Color(0x9E6A00), Color(0xFFC66D))
     private val strColor   = JBColor(Color(0x067D17), Color(0x6AAB73))
     private val numColor   = JBColor(Color(0x1750EB), Color(0x2AACB8))
     private val boolColor  = JBColor(Color(0x0033B3), Color(0xCC7832))
     private val nullColor  = JBColor.GRAY
-    private val braceColor = JBColor(Color(0x555555), Color(0xA9B7C6))
+    private val braceColor = JBColor(Color(0x6E6E6E), Color(0xA9B7C6))
     private val countColor = JBColor(Color(0x1A7F37), Color(0x499C54))
-    private val commaColor = JBColor(Color(0x9E9E9E), Color(0x606366))
+    private val commaColor = JBColor(Color(0xB0B0B0), Color(0x606366))
     private val pageColor  = JBColor.GRAY
 
     companion object {
