@@ -195,4 +195,29 @@ class JsonTransformerTest {
         assertEquals("b", JsonTransformer.displayCell(sorted.columns[0].cells[1]))
         assertTrue(sorted.columns[0].cells[2] is JsonValue.Null)   // nulls last
     }
+
+    @Test
+    fun `single top-level json object parses as a one-row table`() {
+        val table = JsonTransformer.parse("""{"gCardName":"abc","zCtractNo":"1234"}""")
+        assertEquals(1, table.rowCount)
+        assertEquals(listOf("gCardName", "zCtractNo"), table.columns.map { it.name })
+        assertEquals("abc", JsonTransformer.displayCell(table.columns[0].cells[0]))
+        assertEquals("1234", JsonTransformer.displayCell(table.columns[1].cells[0]))
+        val out = JsonTransformer.render(table, JsonTableFormat.ARRAY_OF_OBJECTS, minify = true)
+        assertEquals("""[{"gCardName":"abc","zCtractNo":"1234"}]""", out.trim())
+    }
+
+    @Test
+    fun `single object with explicit array-of-objects layout also parses`() {
+        val table = JsonTransformer.parse("""{"a":1}""", JsonTableFormat.ARRAY_OF_OBJECTS)
+        assertEquals(1, table.rowCount)
+    }
+
+    @Test
+    fun `top-level object of column arrays parses as keyed array`() {
+        val table = JsonTransformer.parse("""{"name":["a","b"],"age":[1,2]}""")
+        assertEquals(2, table.rowCount)
+        assertEquals(listOf("name", "age"), table.columns.map { it.name })
+        assertEquals(2, table.columns.size)
+    }
 }

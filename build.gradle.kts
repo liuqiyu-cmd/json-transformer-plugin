@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.example"
-version = "1.0.1"
+version = "1.0.2"
 
 dependencies {
     // Compile against IntelliJ IDEA 2024.3 (build 243), which is cached locally.

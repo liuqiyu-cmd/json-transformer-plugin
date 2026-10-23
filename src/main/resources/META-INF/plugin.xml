@@ -2,7 +2,7 @@
     <id>com.github.liuqiyu-cmd.jsontransformer</id>
     <name>JSON Transformer</name>
     <vendor email="liuqiyu@dbhl.cn" url="https://github.com/liuqiyu-cmd/json-transformer-plugin">liuqiyu-cmd</vendor>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 
     <description><![CDATA[
         <p>Convert JSON between multiple table layouts inside your IDE — parse tables

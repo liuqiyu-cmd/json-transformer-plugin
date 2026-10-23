@@ -52,12 +52,17 @@ object JsonTransformer {
     fun parse(input: String, format: JsonTableFormat = JsonTableFormat.AUTO, smartParse: Boolean = false): Table {
         val value = Json.parse(input)
         val fmt = if (format == JsonTableFormat.AUTO) detect(value) else format
+        // A single top-level JSON object is a one-row table: wrap it so the
+        // array-of-objects parser accepts it ({"a":1,"b":2} → [{"a":1,"b":2}]).
+        val normalized = if (fmt == JsonTableFormat.ARRAY_OF_OBJECTS && value is JsonValue.Obj) {
+            JsonValue.Arr(listOf(value))
+        } else value
         return when (fmt) {
-            JsonTableFormat.ARRAY_OF_OBJECTS -> parseArrayOfObjects(value, smartParse)
+            JsonTableFormat.ARRAY_OF_OBJECTS -> parseArrayOfObjects(normalized, smartParse)
             JsonTableFormat.ARRAY_2D -> parseArray2D(value, smartParse)
             JsonTableFormat.COLUMN_ARRAY -> parseColumnArray(value, smartParse)
             JsonTableFormat.KEYED_ARRAY -> parseKeyedArray(value, smartParse)
-            JsonTableFormat.AUTO -> parseArrayOfObjects(value, smartParse)
+            JsonTableFormat.AUTO -> parseArrayOfObjects(normalized, smartParse)
         }
     }
 
